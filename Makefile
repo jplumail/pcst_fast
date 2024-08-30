@@ -41,11 +41,25 @@ pcst_fast_test: $(PCST_FAST_TEST_OBJS:%=$(OBJDIR)/%) $(SRCDIR)/pcst_fast_test.cc
 run_pcst_fast_test: pcst_fast_test
 	./pcst_fast_test
 
+# Python Configuration Handling
+# 1. Prefer python3-config if available
+PYTHON_CONFIG ?= python3-config
+
+# 2. Fallback to python-config if necessary
+ifeq (,$(shell which $(PYTHON_CONFIG)))
+  PYTHON_CONFIG := python-config
+endif
+
+# 3. Verify if PYTHON_CONFIG was found
+ifeq (,$(shell which $(PYTHON_CONFIG)))
+  $(error "ERROR: Neither python3-config nor python-config could be found. Please install the necessary Python development packages.")
+endif
+
 
 PCST_FAST_PY_SRC = pcst_fast_pybind.cc
 PCST_FAST_PY_SRC_DEPS = $(PCST_FAST_PY_SRC) pcst_fast.h pcst_fast.cc
 pcst_fast_py: $(PCST_FAST_PY_SRC_DEPS:%=$(SRCDIR)/%)
-	$(CXX) $(CXXFLAGS) -shared -I $(SRCDIR) -I external/pybind11/include `python-config --cflags --ldflags` $(SRCDIR)/pcst_fast_pybind.cc $(SRCDIR)/pcst_fast.cc -o pcst_fast.so
+	$(CXX) $(CXXFLAGS) -shared -I $(SRCDIR) -I external/pybind11/include `$(PYTHON_CONFIG) --cflags --ldflags` $(SRCDIR)/pcst_fast_pybind.cc $(SRCDIR)/pcst_fast.cc -o pcst_fast.so
 
 run_pcst_fast_py_test: pcst_fast_py
 	python -m pytest src/test_pcst_fast.py
